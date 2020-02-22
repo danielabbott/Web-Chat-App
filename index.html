@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Title</title>
+    <meta charset="utf-8">
+    <meta name="viewport">
+    <link rel="stylesheet" href="chat.css" />
+</head>
+
+<body>
+
+    <!-- Form for entering an IP address and port number and a nickname -->
+    <div id="setNicknameUI" name="connectForm">
+        <form onsubmit ="connect();return false;">
+            <input type="text" placeholder="Enter host name..." id="host" value="localhost:25566" required>
+            <input type="text" placeholder="Enter nickname..." id="nickname" required>
+            <input type="submit" value="Enter">
+        </form>
+    </div>
+
+    <!-- Main GUI (chat log, nicknames, etc.) -->
+    <div id="chatui" hidden>
+        <div id="chatlog"></div>
+
+        <form onsubmit ="sendMessage();return false;" name="chatForm" autocomplete="off" >
+            <input type="text" placeholder="" id="chatbar" maxlength = 986>
+            <input type="submit" id="send" value="Send" disabled>
+        </form>
+
+        <div id="namesList"></div>
+    </div>
+
+    <script>
+        // Get host from URL (optional)
+        url_string = window.location.href;
+        url = new URL(url_string);
+        c = url.searchParams.get("host");
+        if(c != null) {
+            document.getElementById('host').value = c;
+        }
+
+
+        // https://stackoverflow.com/a/6234804/11498001
+        // Escapes characters to stop HTML injection and adds bold and italics tags
+        function parseText(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;")
+                 .replace(/~{1}(.*)~{1}/g, "<i>$1</i>")
+                 .replace(/_{1}(.*)_{1}/g, "<b>$1</b>");
+         }
+
+
+        socket = null;
+        nicknamesToCome = -1;
+       
+        function connect() {
+            // Switch to main UI
+            document.getElementById('setNicknameUI').hidden = true;
+            document.getElementById('chatui').hidden = false;
+
+            // Connect to server
+            socket = new WebSocket("ws://" + document.getElementById('host').value);
+
+            socket.onerror = function(event) {
+                console.error("WebSocket error: ", event);
+                document.write("Connection lost")
+            };
+
+            socket.onopen = function(e) {
+                // First message sent is always the nickname
+                socket.send(document.getElementById('nickname').value);
+                document.getElementById('send').disabled=false;
+            };
+
+            socket.onmessage = function(event) {
+                if(nicknamesToCome == -1) {
+                    // First message received is always the number of users in the chat (not including us)
+                    nicknamesToCome = parseInt(event.data);
+                }
+                else if(nicknamesToCome > 0) {
+                    // The nickname for each user is sent, we add it to the users list
+                    document.getElementById('namesList').innerHTML += event.data + '<br>';
+                    nicknamesToCome -= 1;
+                }
+                else {
+                    text = parseText(event.data);
+
+                    if(text[0] == '!') {
+                        // User left the chat
+
+                        i = text.indexOf('!', 1);
+                        name = text.substr(1, i-1);
+
+                        document.getElementById('namesList').innerHTML = document.getElementById('namesList').innerHTML.replace(name + '<br>', '')
+
+                        text = text.replace(/!/g, '');
+                    }
+                    else if(text[0] == '[') {
+                        // User joined the chat
+
+                        i = text.indexOf('[', 1);
+                        name = text.substr(1, i-1);
+
+                        document.getElementById('namesList').innerHTML += name + '<br>';
+
+                        text = text.replace(/\[/g, '');
+                    }
+
+                    // Chat message
+
+                    if(chatlog.innerHTML.slice(-4) == '</p>') {
+                        s = chatlog.innerHTML.substr(0, chatlog.innerHTML.length - 4);
+                        s += text + "<br></p>";
+                        chatlog.innerHTML = s;
+                    }
+                    else {
+                        chatlog.innerHTML += '<p>' + text + "<br></p>";
+                    }
+
+                    document.getElementById('chatlog').scrollTop=1000000000;
+                    
+                }
+            };
+
+        }
+
+        function sendMessage() {
+            x = document.getElementById('chatbar');
+            socket.send(x.value);
+            x.value = '';
+        }
+    </script>
+
+</body>
+
+</html>

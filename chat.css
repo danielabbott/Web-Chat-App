@@ -1,0 +1,52 @@
+body {
+	overflow: hidden;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+#chatlog {
+	position: absolute;
+	width: calc(80% - 30px);
+	left:5px;
+	height: calc(100% - 70px);
+	top:5px;
+	border-style: none;
+	resize: none;
+	background-color: #f0f0f0;
+	word-wrap: break-word;
+	padding: 10px;
+	overflow: auto;
+}
+
+#chatbar {
+	position:absolute;
+	width: calc(80% - 130px);
+	left:5px;
+	bottom:5px;
+	height: 30px;
+	border-style: none;
+	background-color: #f0f0f0;
+}
+
+#send {
+	position:absolute;
+	width: 100px;
+	right: calc(20% + 5px);
+	bottom:5px;
+	height: 30px;
+	background-color: #f0f0f0;
+  	border: none;
+}
+
+#namesList {
+	position:absolute;
+	width: calc(20% - 25px);
+	right: 5px;
+	bottom: 5px;
+	height: calc(100% - 30px);
+	background-color: #f0f0f0;
+  	border: none;
+	resize: none;
+	word-wrap: break-word;
+	padding: 10px;
+	overflow: auto;
+}
